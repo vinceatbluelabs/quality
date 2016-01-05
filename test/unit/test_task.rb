@@ -10,10 +10,15 @@ require_relative 'tools/bigfiles'
 require_relative 'tools/punchlist'
 require_relative 'tools/brakeman'
 require_relative 'tools/rails_best_practices'
+require_relative 'tools/eslint'
+require_relative 'tools/jscs'
+require_relative 'tools/pep8'
 
 # Unit test the Task class
 class TestTask < MiniTest::Test
   include ::Test::Quality::Tools::Cane
+  include ::Test::Quality::Tools::Eslint
+  include ::Test::Quality::Tools::Jscs
   include ::Test::Quality::Tools::Flay
   include ::Test::Quality::Tools::Flog
   include ::Test::Quality::Tools::Reek
@@ -22,6 +27,7 @@ class TestTask < MiniTest::Test
   include ::Test::Quality::Tools::Punchlist
   include ::Test::Quality::Tools::Brakeman
   include ::Test::Quality::Tools::RailsBestPractices
+  include ::Test::Quality::Tools::Pep8
 
   def test_quality_task_all_tools
     get_test_object do |_task|
@@ -38,6 +44,7 @@ class TestTask < MiniTest::Test
   def test_quality_task_some_not_installed
     get_test_object do |_task|
       setup_quality_task_mocks(uninstalled_tools: ['cane'])
+      @mocks[:which].expects(:which).with('cane').returns(nil)
     end
   end
 
@@ -48,6 +55,7 @@ class TestTask < MiniTest::Test
     expect_tools_installed(ALL_TOOLS - uninstalled_tools)
     tools_that_actually_run = (ALL_TOOLS - suppressed_tools) - uninstalled_tools
     expect_tools_run(tools_that_actually_run)
+    expect_find_exclude_files
   end
 
   def expect_tools_tasks_defined(tools)
@@ -55,7 +63,7 @@ class TestTask < MiniTest::Test
   end
 
   ALL_TOOLS = %w(cane flog flay reek rubocop bigfiles punchlist brakeman
-                 rails_best_practices)
+                 rails_best_practices eslint jscs pep8)
 
   def expect_tools_run(tools)
     tools.each { |tool_name| expect_single_tool_run(tool_name) }
@@ -125,14 +133,53 @@ class TestTask < MiniTest::Test
     IO.read("#{File.dirname(__FILE__)}/samples/#{tool_name}_sample_output")
   end
 
+  def expected_ruby_source_glob
+    '{Rakefile,{*,.*}.{gemspec,rake,rb},' \
+    '{app,config,db,feature,lib,spec,src,test}/**/{*,.*}.{gemspec,rake,rb}}'
+  end
+
   def expect_find_ruby_files
-    source_glob =
-      '{Rakefile,{*,.*}.{rb,rake,gemspec},' \
-      '{src,app,config,db,lib,test,spec,feature}/**/{*,.*}.{rb,rake,gemspec}}'
-    expect_glob.with(source_glob)
+    expect_glob.with(expected_ruby_source_glob)
       .returns(['fake1.rb', 'fake2.rb', 'lib/libfake1.rb',
                 'test/testfake1.rb',
-                'features/featuresfake1.rb'])
+                'features/featuresfake1.rb',
+                'db/schema.rb'])
+  end
+
+  def expect_find_exclude_files
+    expect_glob.with('{**/vendor/**,db/schema.rb}')
+      .returns(['vendor/fake1.rb', 'vendor/fake1.js', 'db/schema.rb',
+                'src/js/vendor/vendor_file.js'])
+      .at_least(1)
+  end
+
+  def expected_source_and_doc_files_glob
+    '{Dockerfile,Rakefile,{*,.*}.{c,clj,cljs,cpp,gemspec,' \
+    'html,java,js,json,md,py,rake,rb,scala,sh,swift,' \
+    'yml},{app,config,db,feature,lib,' \
+    'spec,src,test,www}/**/{*,.*}.' \
+    '{c,clj,cljs,cpp,gemspec,' \
+    'html,java,js,json,md,py,rake,rb,scala,sh,swift,yml}}'
+  end
+
+  def expect_find_js_files
+    source_glob =
+      '{{*,.*}.{js},' \
+      '{app,src,www}/**/{*,.*}.{js}}'
+    expect_glob.with(source_glob)
+      .returns(['fake1.js',
+                'src/js/vendor/vendor_file.js',
+                'src/foo/testfake1.js',
+                'features/featuresfake1.js',
+                'vendor/fake1.js'])
+  end
+
+  def expect_find_python_files
+    source_glob =
+      '{{*,.*}.{py},' \
+      '{src}/**/{*,.*}.{py}}'
+    expect_glob.with(source_glob)
+      .returns(['fake1.py'])
   end
 
   def expect_glob

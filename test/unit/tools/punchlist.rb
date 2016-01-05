@@ -4,12 +4,8 @@ module Test
       # Test for the 'bigfiles' tool within the quality gem
       module Punchlist
         def punchlist_expected_args
-          "--glob '{Rakefile,Dockerfile,{*,.*}.{md,rb,rake,gemspec,swift,cpp," \
-          'c,java,py,clj,cljs,scala,js,yml,sh,json},{src,app,config,db,lib,' \
-          'test,spec,feature}/**/{*,.*}.' \
-          '{md,rb,rake,gemspec,swift,cpp,c,java,py,clj,cljs,' \
-          "scala,js,yml,sh,json}}' " \
-          "--exclude-glob '{db/schema.rb}'"
+          "--glob '" + expected_source_and_doc_files_glob +
+            "' --exclude-glob '{**/vendor/**,db/schema.rb}'"
         end
 
         def expect_punchlist_run(quality_checker)

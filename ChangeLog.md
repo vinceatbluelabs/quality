@@ -108,3 +108,30 @@
 
 ## Changes since Quality 17.1.1
 Add working source_files_exclude_glob support
+
+## Changes since Quality 17.2.0
+Add ESLint support for JS
+Extra source files config matches docs
+Add PEP8 support for Python
+Fix gemspec file inclusion bugs
+
+## Changes since Quality 18.0.0
+Fix pep8 bug when no python files found
+
+## Changes since Quality 18.0.0
+Add JSCS support for JS
+
+## Changes since Quality 19.0.0
+Give a diagnostic when JSCS not configured
+
+## Changes since Quality 19.1.0
+Fix flag name in diagnostic
+
+## Changes since Quality 19.1.1
+Fix bug keeping jscs from running
+
+## Changes since Quality 19.1.2
+Bump source_finder requirement
+
+## Changes since Quality 19.1.3
+Exclude vendor files
